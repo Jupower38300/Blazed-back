@@ -9,6 +9,7 @@ import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Profile } from './entities/profile.entity';
 import { User } from 'src/users/users.entity';
+import { Industry } from 'src/industry/entities/industry.entity';
 
 @Injectable()
 export class ProfileService {
@@ -17,6 +18,9 @@ export class ProfileService {
     private profileRepository: Repository<Profile>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+
+    @InjectRepository(Industry)
+    private industryRepository: Repository<Industry>,
   ) {}
 
   /**
@@ -247,5 +251,101 @@ export class ProfileService {
     }
 
     return await queryBuilder.getMany();
+  }
+
+  async getMatchingProfilesForIndustry(industryId: number): Promise<Profile[]> {
+    // Récupération de l'industrie avec ses missions
+    const industry = await this.industryRepository.findOne({
+      where: { industry_id: industryId },
+      relations: ['missions'],
+    });
+
+    if (!industry) {
+      throw new NotFoundException('Industry not found');
+    }
+
+    const allMissions = industry.missions;
+
+    // Extraire les critères des missions
+    const neededDomains = new Set<string>();
+    const neededSkills = new Set<string>();
+    const neededSoftSkills = new Set<string>();
+    const neededStacks = new Set<string>();
+    const neededLangs = new Set<string>();
+    const neededWorkTypes = new Set<string>();
+    const neededWorkLevels = new Set<string>();
+
+    for (const mission of allMissions) {
+      mission.domains?.forEach((d) => neededDomains.add(d));
+      mission.hardSkills?.forEach((s) => neededSkills.add(s));
+      mission.softSkills?.forEach((s) => neededSoftSkills.add(s));
+      mission.stacks?.forEach((s) => neededStacks.add(s));
+      mission.langs?.forEach((l) => neededLangs.add(l));
+      if (mission.workType) neededWorkTypes.add(mission.workType);
+      if (mission.workLevel) neededWorkLevels.add(mission.workLevel);
+    }
+
+    // Définition des poids (weights)
+    const weights = {
+      domains: 10,
+      hardSkills: 5,
+      softSkills: 3,
+      langs: 2,
+      stacks: 3,
+      workType: 2,
+      workLevel: 3,
+    };
+
+    // Récupérer tous les profils
+    const profiles = await this.profileRepository.find({
+      relations: ['user'],
+    });
+
+    // Calcul du score avec pondérations
+    const matchedProfiles = profiles
+      .map((profile) => {
+        let score = 0;
+
+        // Domaines
+        const domainMatch = profile.domaines?.filter((d) =>
+          neededDomains.has(d),
+        );
+        score += (domainMatch?.length || 0) * weights.domains;
+
+        // Hard skills
+        const skillMatch = profile.hardSkills?.filter((s) =>
+          neededSkills.has(s),
+        );
+        score += (skillMatch?.length || 0) * weights.hardSkills;
+
+        // Soft skills
+        const softSkillMatch = profile.softSkills?.filter((s) =>
+          neededSoftSkills.has(s),
+        );
+        score += (softSkillMatch?.length || 0) * weights.softSkills;
+
+        // Langues
+        const langMatch = profile.langs?.filter((l) => neededLangs.has(l));
+        score += (langMatch?.length || 0) * weights.langs;
+
+        // Stack
+        const stackMatch = profile.stacks?.filter((s) => neededStacks.has(s));
+        score += (stackMatch?.length || 0) * weights.stacks;
+
+        // Méthode de travail
+        if (profile.workType && neededWorkTypes.has(profile.workType))
+          score += weights.workType;
+
+        // Niveau d'expérience
+        if (profile.workLevel && neededWorkLevels.has(profile.workLevel))
+          score += weights.workLevel;
+
+        return { profile, score };
+      })
+      .filter((p) => p.score > 0) // On garde uniquement les profils pertinents
+      .sort((a, b) => b.score - a.score) // Tri décroissant par score
+      .map((p) => p.profile);
+
+    return matchedProfiles;
   }
 }

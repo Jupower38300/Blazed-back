@@ -13,7 +13,7 @@ export class Mission {
   industry: Industry;
 
   @ManyToOne(() => User, (user) => user.missions, { onDelete: 'CASCADE' })
-  user: User;
+  user?: User;
 
   @Column({ length: 100 })
   name: string;

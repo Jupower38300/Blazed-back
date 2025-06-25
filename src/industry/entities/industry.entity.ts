@@ -1,11 +1,26 @@
+import { FreelanceList } from 'src/freelance-list/entities/freelance-list.entity';
 import { Mission } from 'src/mission/entities/mission.entity';
 import { MissionHistory } from 'src/mission_history/entities/mission_history.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { User } from 'src/users/users.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 
 @Entity('industry')
 export class Industry {
   @PrimaryGeneratedColumn()
   industry_id: number;
+
+  @Column({ length: 100, nullable: true })
+  email: string;
+
+  @Column({ length: 255, nullable: true })
+  password_hash: string;
 
   @Column({ length: 100 })
   name: string;
@@ -16,6 +31,15 @@ export class Industry {
   @Column({ type: 'text' })
   size: string;
 
+  @ManyToOne(() => User, (user) => user.industry, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'userUserId', referencedColumnName: 'user_id' })
+  user: User;
+
+  @Column({ type: 'uuid', name: 'userUserId' }) // Ajoutez ceci
+  userUserId: string;
+
   @Column('simple-array', { nullable: true })
   valeurs: string[];
 
@@ -24,4 +48,7 @@ export class Industry {
 
   @OneToMany(() => MissionHistory, (history) => history.industry)
   missionHistories: MissionHistory[];
+
+  @OneToMany(() => FreelanceList, (freelance) => freelance.industry)
+  freelanceLists: FreelanceList[];
 }

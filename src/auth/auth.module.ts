@@ -7,11 +7,13 @@ import { LocalStrategy } from './strategy/local.strategy';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { ProfileModule } from 'src/profile/profile.module';
+import { IndustryModule } from 'src/industry/industry.module';
 
 @Module({
   imports: [
     UsersModule,
     ProfileModule,
+    IndustryModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

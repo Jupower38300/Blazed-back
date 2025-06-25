@@ -1,3 +1,4 @@
+// user.entity.ts
 import {
   Entity,
   PrimaryColumn,
@@ -5,8 +6,10 @@ import {
   OneToOne,
   OneToMany,
   BeforeInsert,
+  BeforeUpdate,
 } from 'typeorm';
 import { Profile } from 'src/profile/entities/profile.entity';
+import { Industry } from 'src/industry/entities/industry.entity';
 import { Chat } from 'src/chats/entities/chat.entity';
 import { Mission } from 'src/mission/entities/mission.entity';
 import { MissionHistory } from 'src/mission_history/entities/mission_history.entity';
@@ -25,8 +28,32 @@ export class User {
   @Column({ default: false })
   isAdmin: boolean;
 
-  @OneToOne(() => Profile, (profile) => profile.user, { cascade: true })
-  profile: Profile;
+  @OneToOne(() => Profile, (profile) => profile.user, {
+    cascade: true,
+    nullable: true,
+  })
+  profile: Profile | null;
+
+  @OneToOne(() => Industry, (industry) => industry.user, {
+    cascade: true,
+    nullable: true,
+  })
+  industry: Industry | null;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateXOR() {
+    if (this.profile && this.industry) {
+      throw new Error(
+        'Un utilisateur ne peut avoir qu’un profil OU une industry, pas les deux.',
+      );
+    }
+    if (!this.profile && !this.industry) {
+      throw new Error(
+        'Un utilisateur doit avoir soit un profil, soit une industry.',
+      );
+    }
+  }
 
   @BeforeInsert()
   generateUserId() {

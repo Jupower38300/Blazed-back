@@ -7,6 +7,9 @@ import { ProfileService } from 'src/profile/profile.service';
 import { Profile } from 'src/profile/entities/profile.entity';
 import { UsersService } from 'src/users/users.service'; // You'll need this
 import { User } from 'src/users/users.entity';
+import { IndustryService } from 'src/industry/industry.service';
+import { Industry } from 'src/industry/entities/industry.entity';
+import { RegisterIndustryRequestDto } from './dtos/register-industry-request.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,17 +17,16 @@ export class AuthService {
     private profileService: ProfileService,
     private usersService: UsersService,
     private jwtService: JwtService,
+    private industryService: IndustryService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<Profile> {
     const profile = await this.profileService.findByEmail(email);
-
     if (!profile) {
       throw new BadRequestException('Email ou mot de passe incorrect');
     }
 
     const isMatch = await bcrypt.compare(password, profile.password_hash);
-
     if (!isMatch) {
       throw new BadRequestException('Email ou mot de passe incorrect');
     }
@@ -36,11 +38,11 @@ export class AuthService {
     const payload = {
       email: profile.email,
       id: profile.user_id,
-      // Ajoutez d'autres données nécessaires
+      accountType: 'freelance',
     };
     return {
       access_token: this.jwtService.sign(payload),
-      user_id: profile.user_id, // Ajoutez l'ID dans la réponse
+      user_id: profile.user_id,
     };
   }
 
@@ -88,5 +90,69 @@ export class AuthService {
     const savedUser = await this.usersService.create(newUser);
 
     return this.login(savedUser.profile);
+  }
+
+  async validateIndustry(email: string, password: string): Promise<Industry> {
+    const industry = await this.industryService.findByEmail(email);
+    if (!industry) {
+      throw new BadRequestException('Email ou mot de passe incorrect');
+    }
+
+    const isMatch = await bcrypt.compare(password, industry.password_hash);
+    if (!isMatch) {
+      throw new BadRequestException('Email ou mot de passe incorrect');
+    }
+
+    return industry;
+  }
+
+  async loginIndustry(industry: Industry): Promise<AccessToken> {
+    const payload = {
+      email: industry.email,
+      id: industry.user.user_id, // Access user_id through the user relation
+      accountType: 'industry',
+    };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user_id: industry.user.user_id,
+    };
+  }
+
+  async registerIndustry(
+    industryDto: RegisterIndustryRequestDto,
+  ): Promise<AccessToken> {
+    // Check if email exists in either profiles or industries
+    const existingProfile = await this.profileService.findByEmail(
+      industryDto.email,
+    );
+    if (existingProfile) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const existingIndustry = await this.industryService.findByEmail(
+      industryDto.email,
+    );
+    if (existingIndustry) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(industryDto.password, 10);
+
+    const newUser = new User();
+    const newIndustry = new Industry();
+
+    // Set industry properties
+    newIndustry.email = industryDto.email;
+    newIndustry.password_hash = hashedPassword;
+    newIndustry.name = industryDto.name;
+    newIndustry.profileImageBase64 = industryDto.profileImageBase64 || '';
+    newIndustry.size = industryDto.size;
+    newIndustry.valeurs = industryDto.valeurs || [];
+
+    // Link industry to user
+    newUser.industry = newIndustry;
+
+    const savedUser = await this.usersService.create(newUser);
+    return this.loginIndustry(savedUser.industry);
   }
 }

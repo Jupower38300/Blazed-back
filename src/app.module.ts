@@ -22,6 +22,8 @@ import { Chat } from './chats/entities/chat.entity';
 import { Post } from './posts/entities/post.entity';
 import { Comment } from './comments/entities/comment.entity';
 import { Industry } from './industry/entities/industry.entity';
+import { FreelanceListModule } from './freelance-list/freelance-list.module';
+import { FreelanceList } from './freelance-list/entities/freelance-list.entity';
 
 @Module({
   imports: [
@@ -44,6 +46,7 @@ import { Industry } from './industry/entities/industry.entity';
           Post,
           Comment,
           Industry,
+          FreelanceList,
         ],
         synchronize: true,
       }),
@@ -58,6 +61,7 @@ import { Industry } from './industry/entities/industry.entity';
     CommentsModule,
     ChatsModule,
     MissionHistoryModule,
+    FreelanceListModule,
   ],
   controllers: [AppController],
   providers: [

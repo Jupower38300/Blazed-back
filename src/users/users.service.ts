@@ -14,6 +14,7 @@ export class UsersService {
     return await this.userRepository.find({
       relations: [
         'profile',
+        'industry', // 👈 Ajouté
         'posts',
         'comments',
         'chatsSent',
@@ -29,6 +30,7 @@ export class UsersService {
       where: { user_id: id },
       relations: [
         'profile',
+        'industry', // 👈 Ajouté
         'posts',
         'comments',
         'chatsSent',
@@ -47,19 +49,26 @@ export class UsersService {
 
   async create(userData: Partial<User>): Promise<User> {
     const user = this.userRepository.create(userData);
+
+    // 👇 Lie les entités enfants dans les deux sens
+    if (user.profile) {
+      user.profile.user = user;
+    }
+    if (user.industry) {
+      user.industry.user = user;
+    }
+
     return await this.userRepository.save(user);
   }
 
   async update(id: string, userData: Partial<User>): Promise<User> {
     const user = await this.findOne(id);
     await this.userRepository.update({ user_id: id }, userData);
-
     return await this.findOne(id);
   }
 
   async delete(id: string): Promise<void> {
     const result = await this.userRepository.delete({ user_id: id });
-
     if (result.affected === 0) {
       throw new NotFoundException('User not found');
     }

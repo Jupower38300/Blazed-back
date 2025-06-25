@@ -7,7 +7,7 @@ export class CreateMissionDto {
   status: string;
   interests?: string;
 
-  industryId: number;
+  industryId: string;
   userId: string;
 
   domaines?: string[];

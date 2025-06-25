@@ -3,16 +3,14 @@ import {
   Body,
   Controller,
   Post,
-  Request,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-
 import { AuthGuard } from '@nestjs/passport';
 import { RegisterRequestDto } from './dtos/register-request.dto';
-import { LoginResponseDTO } from './dtos/login-response.dto';
 import { RegisterResponseDTO } from './dtos/register-response.dto';
 import { Public } from './decorators/public.decorator';
+import { RegisterIndustryRequestDto } from './dtos/register-industry-request.dto';
 
 @Public()
 @Controller('auth')
@@ -31,5 +29,12 @@ export class AuthController {
     @Body() registerBody: RegisterRequestDto,
   ): Promise<RegisterResponseDTO | BadRequestException> {
     return await this.authService.register(registerBody);
+  }
+
+  @Post('registerindustry')
+  async registerIndustry(
+    @Body() registerBody: RegisterIndustryRequestDto,
+  ): Promise<RegisterResponseDTO | BadRequestException> {
+    return await this.authService.registerIndustry(registerBody);
   }
 }

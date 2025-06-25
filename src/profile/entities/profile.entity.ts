@@ -1,5 +1,13 @@
+import { FreelanceList } from 'src/freelance-list/entities/freelance-list.entity';
 import { User } from 'src/users/users.entity';
-import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  OneToMany,
+  OneToOne,
+  PrimaryColumn,
+} from 'typeorm';
 
 @Entity('profil')
 export class Profile {

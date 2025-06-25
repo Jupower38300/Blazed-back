@@ -14,6 +14,13 @@ export class IndustryService {
     return this.industryRepository.find();
   }
 
+  async findByEmail(email: string): Promise<Industry | null> {
+    return this.industryRepository.findOne({
+      where: { email },
+      relations: ['user'], // Load user relation
+    });
+  }
+
   findOne(id: number) {
     return this.industryRepository.findOne({ where: { industry_id: id } });
   }
