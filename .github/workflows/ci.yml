@@ -25,7 +25,7 @@ jobs:
         run: npm install
 
       - name: Check code format (Prettier)
-        run: npm run format:check
+        run: npm run format
 
       - name: Lint code (ESLint)
         run: npm run lint
@@ -34,4 +34,4 @@ jobs:
         run: npm run build
 
       - name: Run unit tests (Jest)
-        run: npm run test:ci
+        run: npm run test
