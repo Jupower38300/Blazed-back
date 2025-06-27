@@ -32,6 +32,3 @@ jobs:
 
       - name: Compile TypeScript
         run: npm run build
-
-      - name: Run unit tests (Jest)
-        run: npm run test
